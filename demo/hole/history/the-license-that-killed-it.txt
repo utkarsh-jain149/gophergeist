@@ -1,20 +1,24 @@
 The license that killed Gopher
 
+Every ghost story has a curse. This is Gopher's.
+
 In 1993 the University of Minnesota announced that it would charge license
 fees for some uses of its Gopher server software, mostly commercial ones. The
 fees were modest, and many people kept using Gopher for free. But the
-announcement scared off companies and developers, who no longer knew whether
-building on Gopher would cost them.
+announcement frightened off companies and developers, who no longer knew
+whether building on Gopher would one day cost them.
 
 That same spring, on April 30, 1993, CERN released the World Wide Web software
 into the public domain. Anyone could run it, change it, and build on it for
 free, with no permission needed. Mosaic, a graphical web browser, arrived
 the same year.
 
-People voted with their servers. The web grew explosively and Gopher shrank.
-Looking back, the licensing announcement is widely seen as the turning point.
-The university eventually released its Gopher server under the GNU GPL in 2000,
-but by then the web had won.
+People voted with their servers. The web grew explosively, and Gopher began
+to fade like a voice down a long hallway. Looking back, the licensing
+announcement is widely seen as the turning point. The university eventually
+released its Gopher server under the GNU GPL in 2000, but by then the web had
+won and Gopherspace was mostly empty rooms.
 
-The lesson is still with us: a technology that someone can charge you for, or
-take away, is a technology people hesitate to build on. Open things spread.
+The moral is older than the internet: a thing someone can charge you for, or
+take away, is a thing people are afraid to build on. Open things spread.
+Closed things are left to haunt.

@@ -1,16 +1,19 @@
 Gopher is not quite dead
 
-Gopher never disappeared. A small community still runs servers, often called
-gopherholes or phlogs (Gopher blogs). Floodgap, run by Cameron Kaiser, has
-been a hub for years and keeps a list of live servers.
+Gopher never truly disappeared. It only went quiet. A small community still
+keeps servers running, often called gopherholes or phlogs (Gopher blogs), like
+lights left on in an abandoned town. Floodgap, run by Cameron Kaiser, has
+been their gathering place for years and keeps a list of the servers that
+still answer.
 
-Browsers mostly gave up on it. Firefox removed built-in Gopher support in
-version 4, in 2011. But the text browser Lynx still speaks Gopher, and so does
-curl: you can fetch a menu with a plain curl gopher:// command.
+Browsers mostly turned their backs on it. Firefox removed built-in Gopher
+support in version 4, in 2011. But the text browser Lynx still speaks Gopher,
+and so does curl: you can summon a menu with a plain curl gopher:// command.
 
-In 2019 a new protocol called Gemini was created, openly inspired by Gopher.
-It keeps the simple, text-first spirit and adds encryption. Many people who
-run gopherholes also run Gemini capsules.
+In 2019 a new protocol called Gemini rose from the same ground, openly
+inspired by Gopher. It keeps the simple, text-first spirit and adds
+encryption. Many people who keep gopherholes also keep Gemini capsules.
 
-To run your own hole, all you need is a folder of text files and a tiny
-server. Port 70 is the traditional Gopher port.
+To raise your own hole, all you need is a folder of text files and a tiny
+server. Port 70 is the traditional Gopher port, the door the old clients
+still knock on.

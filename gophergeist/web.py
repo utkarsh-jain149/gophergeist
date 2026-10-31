@@ -71,7 +71,9 @@ def render_menu(entries, gopher_host, gopher_port):
             lines.append(f"<form action='{href('7', e['selector'])}'><input name=q aria-label='{display}' "
                          f"placeholder='{display}' required><button>Ask</button></form>")
         else:
-            if (e["host"], e["port"]) == (gopher_host, gopher_port):
+            if t == "h" and e["selector"].startswith("URL:"):
+                url = e["selector"][4:]
+            elif (e["host"], e["port"]) == (gopher_host, gopher_port):
                 url = href(t, e["selector"])
             else:  # a link to some other gopherhole: hand it to the visitor's own Gopher client
                 url = f"gopher://{e['host']}:{e['port']}/{t}{quote(e['selector'])}"
@@ -165,8 +167,7 @@ class WebGateway:
             entries = []
             if sources:
                 entries += [protocol.info(), protocol.info(), protocol.info("Sources:")]
-                entries += [protocol.item("0", f"[{n}] {title}", sel, gopher.hostname, gopher.port)
-                            for n, (sel, title) in enumerate(sources, 1)]
+                entries += gopher.source_items(sources)
             entries += [protocol.info(), protocol.item("7", "Ask another question", SEARCH, gopher.hostname, gopher.port)]
             menu = render_menu(protocol.parse_menu(protocol.end_menu(entries)), gopher.hostname, gopher.port)
             yield ("</pre>" + menu + PAGE_TAIL).encode("utf-8")

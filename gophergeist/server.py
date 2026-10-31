@@ -1,6 +1,7 @@
 """The Gopher server: asyncio, one request line in, one response out, connection closed. Just like 1991."""
 
 import asyncio
+import html
 import contextlib
 import textwrap
 import threading
@@ -8,6 +9,7 @@ from collections import OrderedDict
 
 from . import __version__, protocol
 from .hole import Hole, Summaries, item_type
+from . import client, seance as seance_mode
 from .veronica import Answer, Index, ask, ask_stream
 
 SEARCH = "/~veronica"
@@ -36,20 +38,24 @@ search engine from 1992. A plain BM25 index finds the passages, and
 an open-weight model running on this machine reads them and answers,
 citing its sources.
 
-Nothing you ask leaves this machine. No API key. No account. If the
-model is asleep, the index still answers on its own.
+Nothing you ask leaves this machine, unless the keeper of this hole
+has turned on seance mode: then questions the archives can't answer
+are carried beyond the veil, to Veronica-2 and Wikipedia. No API key.
+No account. If the model is asleep, the index still answers alone.
 
 Served by gophergeist {version}. Spirit: {spirit}.
 """
 
 
 class GopherServer:
-    def __init__(self, root, backend=None, hostname="localhost", port=7070, summaries=True):
+    def __init__(self, root, backend=None, hostname="localhost", port=7070, summaries=True, seance=False):
         self.hole = Hole(root)
         self.backend = backend
         self.hostname = hostname
         self.port = port
         self.summaries = Summaries(self.hole) if summaries else None
+        # seance may be True (use the real internet sources) or a callable, which tests use to fake them.
+        self.summon = (seance if callable(seance) else seance_mode.summon) if seance else None
         self._index = None
         self._index_sig = None
         self._index_lock = threading.Lock()
@@ -115,16 +121,29 @@ class GopherServer:
         answer = self.cached_answer(query)
         if answer is None:
             with self.question():
-                answer = self.remember(query, ask(query, self.index(), self.backend))
+                answer = self.remember(query, ask(query, self.index(), self.backend, self.summon))
         lines = [protocol.info(f'Veronica, asked: "{query}"'), protocol.info()]
         lines += self._wrap_info(answer.text)
         if answer.sources:
             lines += [protocol.info(), protocol.info("Sources:")]
-            for n, (selector, title) in enumerate(answer.sources, 1):
-                lines.append(self._link("0", f"[{n}] {title}", selector))
+            lines += self.source_items(answer.sources)
         lines += [protocol.info(), self._link("7", "Ask another question", SEARCH),
                   self._link("1", "Back to the main menu", "/")]
         return protocol.end_menu(lines)
+
+    def source_items(self, sources):
+        """Menu lines for an answer's numbered sources: local files, Gopherspace, or the web."""
+        lines = []
+        for n, (selector, title) in enumerate(sources, 1):
+            display = f"[{n}] {title}"
+            if selector.startswith("URL:"):  # the usual convention for web links in a Gopher menu
+                lines.append(self._link("h", display, selector))
+            elif selector.startswith("gopher://"):
+                host, port, itype, sel = client.parse_url(selector)
+                lines.append(protocol.item(itype, display, sel, host, port))
+            else:
+                lines.append(self._link("0", display, selector))
+        return lines
 
     # ---- dispatch ----------------------------------------------------
 
@@ -133,6 +152,9 @@ class GopherServer:
             return self.menu(self.hole.root)
         if selector == SEARCH:
             return self.search(query)
+        if selector.startswith("URL:"):  # a Gopher client following a web link: hand it a page that points on
+            url = html.escape(selector[4:], quote=True)
+            return f"<html><body>Beyond the veil: <a href=\"{url}\">{url}</a></body></html>".encode("utf-8")
         if selector == ABOUT:
             return protocol.text_body(ABOUT_TEXT.format(version=__version__, spirit=self.backend or "none (index only)"))
         path = self.hole.resolve(selector)
@@ -207,7 +229,7 @@ class GopherServer:
         cached = self.cached_answer(query)
         if cached:
             return cached.sources, iter([cached.text])
-        sources, pieces = ask_stream(query, self.index(), self.backend)
+        sources, pieces = ask_stream(query, self.index(), self.backend, self.summon)
         if self.backend is None or not hasattr(self.backend, "stream") or not sources:
             return sources, pieces
 

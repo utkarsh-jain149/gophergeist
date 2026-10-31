@@ -5,8 +5,9 @@ Archie is usually called the first internet search engine. It was created in
 Peter Deutsch. The name comes from "archive" with the v taken out.
 
 Archie regularly collected the file listings of public FTP servers and let you
-search them by file name. If you knew a program was called something, Archie
-told you which servers had it. It did not look inside files, only at names.
+search them by file name. If you knew a program's name, Archie told you which
+servers were hiding it. It never looked inside the files, only at the names
+carved on the outside, like reading headstones.
 
 What it gave us: the idea of crawling many servers and building one index.
 Veronica and Jughead, Gopher's search engines, took their names from Archie's

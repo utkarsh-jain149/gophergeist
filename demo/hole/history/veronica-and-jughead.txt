@@ -1,6 +1,7 @@
 Veronica and Jughead
 
-Gopherspace had no single index, so people built search engines for it.
+Gopherspace was a maze with no map, so people built search engines to find
+their way through the tunnels.
 
 Veronica appeared in 1992, written by Steven Foster and Fred Barrie at the
 University of Nevada, Reno. The name is a backronym: Very Easy
@@ -8,14 +9,15 @@ Rodent-Oriented Net-wide Index to Computerized Archives. It was a nod to
 Archie, the earlier search engine for FTP archives, since Veronica is a
 character in the Archie comics.
 
-Veronica crawled the menus of Gopher servers around the world. You reached it
-through a search item on a menu: you typed some words, and it answered with a
-new menu of matching items that you could follow directly.
+Veronica crawled the menus of Gopher servers around the world, night after
+night. You reached her through a search item on a menu: you typed some words,
+and she answered with a new menu of matching items that you could follow
+straight into the dark.
 
 Jughead followed in 1993, written by Rhett "Jonzy" Jones at the University of
 Utah. Its backronym was Jonzy's Universal Gopher Hierarchy Excavation And
 Display. Jughead searched one server or a small group of servers rather than
-all of Gopherspace.
+all of Gopherspace, the way a lantern lights one room instead of the house.
 
 A descendant called Veronica-2 is still run today by the Floodgap gopher
-server, so the name never fully died.
+server. So the name never fully died. Some say she is still crawling.

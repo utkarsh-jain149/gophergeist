@@ -9,7 +9,8 @@ Unlike Archie, WAIS searched what was inside documents, and it ranked results
 by relevance. Gopher and early web servers often linked to WAIS databases
 for searching.
 
-Brewster Kahle went on to found the Internet Archive in 1996, which is why
-so much of the early internet can still be visited today.
+Brewster Kahle went on to found the Internet Archive in 1996, the great
+keeper of the dead web. It is the reason so much of the early internet can
+still be visited, long after its servers went dark.
 
 Favorite food on the altar: relevance-ranked results, still warm.

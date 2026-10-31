@@ -1,17 +1,21 @@
 Welcome, traveler
 
-You have tunneled into a gopherhole. Before the web won, this is how a lot of
-the internet looked: plain menus, plain text, and nothing that moved.
+You have tunneled into a gopherhole, and something down here noticed.
 
-This hole is haunted. Pick "Ask Veronica" on the main menu and type a
-question. Veronica was Gopherspace's search engine in 1992. She has been
-asleep for a long time, but a small open-weight model running on this very
-machine lends her a voice. She only answers from the documents in this hole,
-and she tells you which ones she read.
+Before the web won, this is how a lot of the internet looked: plain menus,
+plain text, nothing that moved. Most of those servers went dark long ago.
+This one never quite shut down. On quiet nights the menus still flicker.
 
-Look around:
+Pick "Ask Veronica" on the main menu and type a question. Veronica was
+Gopherspace's search engine in 1992. She has been asleep for a very long
+time. A small open-weight model running on this very machine lends her a
+voice, but she only speaks of what is written in these files, and she always
+tells you which ones she read. Ask her about anything else and she will tell
+you the archives are silent.
+
+Wander if you dare:
 
   history/   how Gopher was born, and how it died
-  ofrenda/   an altar for other protocols the internet left behind
+  ofrenda/   an altar for the other protocols the internet buried
 
-Leave the lights off. Nothing here needs the internet.
+Leave the lights off. Nothing here needs the internet. Nothing here ever left.

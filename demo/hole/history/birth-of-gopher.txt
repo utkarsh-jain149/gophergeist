@@ -1,19 +1,21 @@
 The birth of Gopher
 
-Gopher was written in 1991 at the University of Minnesota by a small team led
-by Mark McCahill, with Farhad Anklesaria, Paul Lindner, Daniel Torrey and Bob
-Alberti. It was named after the university's mascot, the Golden Gophers, and
-after the idea of a "go-fer" that fetches things for you.
+It began in 1991 at the University of Minnesota. A small team led by Mark
+McCahill, with Farhad Anklesaria, Paul Lindner, Daniel Torrey and Bob Alberti,
+built a way to burrow through the internet. They named it after the university's mascot, the Golden Gophers,
+and after the "go-fer" that fetches things for you in the dark.
 
 The idea was simple. A Gopher server answers one request line with either a
 document or a menu. A menu is a list of lines, and each line says what kind of
 thing it points to, what to call it, and which server and selector to ask for
 it. Clients showed those menus as lists you could arrow through. You could
-burrow from one university's server into another's without noticing.
+tunnel from one university's server into another's without ever seeing the
+walls between them.
 
 The protocol was published as RFC 1436 in March 1993. It is short enough to
-read over a cup of coffee. A whole server fits in a few hundred lines of code,
-which is one reason people still run them for fun today.
+read by candlelight in one sitting. A whole server fits in a few hundred lines
+of code, which is why a few devoted people still keep them running today.
 
 Gopher spread fast through universities in 1992 and 1993. For a while it was
-the most popular way to browse information on the internet.
+the most popular way to browse information on the internet. Nobody guessed
+how quickly it would be buried.

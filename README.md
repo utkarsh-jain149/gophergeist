@@ -183,13 +183,38 @@ gophergeist dataset demo/hole --model qwen2.5:7b    # writes veronica-train.json
 `finetune/veronica_colab.ipynb` runs the whole pipeline on a free Colab GPU: teacher, LoRA training with Unsloth,
 and export to a GGUF you load into Ollama as `llama3.2-veronica:1b`. See [`finetune/`](finetune/README.md).
 
+## Séance mode (optional, needs the internet)
+
+By default Veronica only knows your files. Ask about anything else and she says the archives are silent. Turn on
+séance mode and she reaches beyond the veil instead:
+
+```bash
+gophergeist serve demo/hole --web --seance
+gophergeist ask demo/hole "what is the capital of France?" --seance
+```
+
+When the passages in your folder cover less than half the words in a question, the question is sent to two
+open sources that need no account or API key:
+
+- **Veronica-2**, the search engine that still indexes the living Gopherspace, run by Floodgap. So the ghost of
+  the 1992 Veronica literally asks her surviving descendant.
+- **Wikipedia's** public search API.
+
+Your local model still writes the answer, in Veronica's voice, opening with a line about reaching beyond the
+archives and citing what it summoned. Gopher results link to the real gopherholes, and Wikipedia results are
+`h` links.
+
+What leaves your machine is only the question text, and only for questions your files can't answer. Questions your
+files cover never go out, and with the flag off nothing does. If the internet is down, the séance quietly fails
+and she falls back to "the archives are silent."
+
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `gophergeist serve FOLDER` | Serve a folder as a gopherhole on port 7070. Writes menu blurbs in the background. `--web` adds a browser view on port 8070. `--bind 0.0.0.0` shares it on your network; `--port 70` is traditional (needs root). |
+| `gophergeist serve FOLDER` | Serve a folder as a gopherhole on port 7070. Writes menu blurbs in the background. `--web` adds a browser view on port 8070. `--seance` lets Veronica search online when your files are silent. `--bind 0.0.0.0` shares it on your network; `--port 70` is traditional (needs root). |
 | `gophergeist browse [URL]` | A tiny interactive Gopher client. Works on any gopherhole, not just this one. `--ask "..."` goes straight to Veronica. |
-| `gophergeist ask FOLDER "question"` | Ask Veronica from the command line. |
+| `gophergeist ask FOLDER "question"` | Ask Veronica from the command line. `--seance` works here too. |
 | `gophergeist index FOLDER` | Write all menu blurbs now instead of in the background. |
 | `gophergeist dataset FOLDER...` | Write fine-tuning data that teaches a small model to be Veronica (see `finetune/`). |
 | `gophergeist doctor` | Check that the local model is reachable and answers. |
@@ -271,13 +296,15 @@ pip install pytest
 python -m pytest -q
 ```
 
-The 49 tests run fully offline in a few seconds. A fake "spirit" stands in for the model, and a stub HTTP server
+The 58 tests run fully offline in a few seconds. A fake "spirit" stands in for the model, and a stub HTTP server
 stands in for Ollama and llama.cpp so the real request code is exercised. There's also a real TCP round trip
 through the bundled client, plus path-traversal attempts over Gopher and over the web view.
 
 **A note on how this was built:** the sandbox I built it in couldn't download model weights (no access to Ollama's
 registry or Hugging Face), so I tested it end to end against a stub Ollama server and in index-only mode, not
-against a real model. Run it with a real model before you trust the answer transcript above.
+against a real model. Run it with a real model before you trust the answer transcript above. The same goes for
+séance mode: the sandbox couldn't reach Floodgap or Wikipedia, so it's tested against fakes of both. Try a live
+séance before you show it off.
 
 ## Limitations
 

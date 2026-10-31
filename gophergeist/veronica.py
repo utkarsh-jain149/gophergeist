@@ -172,51 +172,103 @@ def prepare(query, index):
 
 SILENT = Answer("The archives are silent. Nothing in this hole speaks of that.", [], spoke=False)
 
+SEANCE_SYSTEM = (
+    "You are Veronica, the ghost of Gopher's 1992 search engine. Your own archives were silent, so you "
+    "reached beyond the veil to the living internet. Open with one short eerie line saying so, then answer "
+    "ONLY from the numbered sources, citing them like [1]. If they don't answer it, say the voices beyond "
+    "were silent too. Plain text, under 90 words."
+)
 
-def ask(query, index, backend=None):
-    plan = prepare(query, index)
+
+@dataclass
+class Plan:
+    system: str
+    prompt: str
+    sources: list
+    fallback: object  # fallback(note) -> the index-only answer text
+
+
+def needs_seance(query, chunks):
+    """True when the local passages cover less than half of the question's words."""
+    q = set(tokenize(query))
+    if not q:
+        return False
+    known = set()
+    for c in chunks:
+        known |= set(c.terms) | c.title_terms
+    return len(q & known) / len(q) < 0.5
+
+
+def _beyond(query, summon):
+    spirits = summon(query)
+    if not spirits:
+        return None
+    sources = [(s.selector, f"{s.title} ({s.origin})") for s in spirits]
+    numbered = [f"[{n}] {s.title} ({s.origin}): {focus(s.text, query)}" for n, s in enumerate(spirits, 1)]
+    prompt = "Sources summoned from beyond the veil:\n" + "\n".join(numbered) + f"\n\nQuestion: {query}"
+
+    def fallback(note):
+        lines = [note, ""] + [f"[{n}] {best_sentence(s.text, query)}" for n, s in enumerate(spirits, 1)]
+        return "\n".join(lines)
+
+    return Plan(SEANCE_SYSTEM, prompt, sources, fallback)
+
+
+def plan_for(query, index, summon=None):
+    """Decide what Veronica reads: passages from the hole, or (in séance mode, when the hole has
+    nothing relevant) passages summoned from the internet. None means nothing at all was found."""
+    local = prepare(query, index)
+    if summon and needs_seance(query, local[0] if local else []):
+        beyond = _beyond(query, summon)
+        if beyond:
+            return beyond
+    if local is None:
+        return None
+    chunks, sources, prompt = local
+    return Plan(SYSTEM, prompt, sources, lambda note: _fallback(query, chunks, sources, note))
+
+
+def ask(query, index, backend=None, summon=None):
+    plan = plan_for(query, index, summon)
     if plan is None:
         return SILENT
-    chunks, sources, prompt = plan
     if backend is None:
-        return Answer(_fallback(query, chunks, sources, "No spirit is bound to this server, so the index speaks alone:"),
-                      sources, spoke=False)
+        return Answer(plan.fallback("No spirit is bound to this server, so the index speaks alone:"),
+                      plan.sources, spoke=False)
     try:
-        text = backend.generate(SYSTEM, prompt, max_tokens=MAX_TOKENS)
+        text = backend.generate(plan.system, plan.prompt, max_tokens=MAX_TOKENS)
     except Exception as e:  # a sleeping model must never take the server down with it
-        return Answer(_fallback(query, chunks, sources, f"The spirit would not wake ({e}). The index speaks instead:"),
-                      sources, spoke=False)
+        return Answer(plan.fallback(f"The spirit would not wake ({e}). The index speaks instead:"),
+                      plan.sources, spoke=False)
     if not text.strip():
-        return Answer(_fallback(query, chunks, sources, "The spirit said nothing. The index speaks instead:"),
-                      sources, spoke=False)
-    return Answer(text.strip(), sources, spoke=True)
+        return Answer(plan.fallback("The spirit said nothing. The index speaks instead:"), plan.sources, spoke=False)
+    return Answer(text.strip(), plan.sources, spoke=True)
 
 
-def ask_stream(query, index, backend=None):
+def ask_stream(query, index, backend=None, summon=None):
     """Like ask(), but returns (sources, pieces) where pieces yields the answer as the model writes it,
     so a visitor sees the first words in a second or two instead of waiting for the whole reply.
     Backends without streaming, or no backend, yield the whole answer as one piece."""
     if backend is None or not hasattr(backend, "stream"):
-        answer = ask(query, index, backend)
+        answer = ask(query, index, backend, summon)
         return answer.sources, iter([answer.text])
-    plan = prepare(query, index)
+    plan = plan_for(query, index, summon)
     if plan is None:
         return [], iter([SILENT.text])
-    chunks, sources, prompt = plan
 
     def pieces():
         said = False
         try:
-            for piece in backend.stream(SYSTEM, prompt, max_tokens=MAX_TOKENS):
+            for piece in backend.stream(plan.system, plan.prompt, max_tokens=MAX_TOKENS):
                 said = said or bool(piece.strip())
                 yield piece
         except Exception as e:
             if said:
                 yield " ... (the spirit faded mid-sentence)"
             else:
-                yield _fallback(query, chunks, sources, f"The spirit would not wake ({e}). The index speaks instead:")
+                yield plan.fallback(f"The spirit would not wake ({e}). The index speaks instead:")
             return
         if not said:
-            yield _fallback(query, chunks, sources, "The spirit said nothing. The index speaks instead:")
+            yield plan.fallback("The spirit said nothing. The index speaks instead:")
 
-    return sources, pieces()
+    return plan.sources, pieces()

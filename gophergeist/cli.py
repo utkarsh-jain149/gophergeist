@@ -9,7 +9,13 @@ from .hole import Hole, Summaries
 from .model import ModelError, make_backend
 from .server import SEARCH, GopherServer
 from .veronica import Index, ask
+from .seance import summon
 from .web import WebGateway
+
+SEANCE_HELP = ("when your files can't answer, let Veronica search Gopherspace (Veronica-2 at Floodgap) "
+               "and Wikipedia. Sends the question text to those sites; off by default")
+SEANCE_NOTICE = ("  seance mode: questions your files can't answer are sent to gopher.floodgap.com (Veronica-2) "
+                 "and en.wikipedia.org")
 
 
 def _backend(args, quiet=False):
@@ -29,9 +35,11 @@ def _backend(args, quiet=False):
 def cmd_serve(args):
     backend = _backend(args)
     server = GopherServer(args.folder, backend, hostname=args.hostname, port=args.port,
-                          summaries=not args.no_summaries)
+                          summaries=not args.no_summaries, seance=args.seance)
     print(f"gophergeist {__version__} haunting {server.hole.root}")
     print(f"  spirit: {backend or 'none (index only)'}")
+    if args.seance:
+        print(SEANCE_NOTICE)
 
     def progress(doc, line):
         print(f"  summarized {doc.selector}: {line}" if doc else f"  {line}")
@@ -74,7 +82,9 @@ def cmd_index(args):
 
 def cmd_ask(args):
     backend = _backend(args)
-    answer = ask(args.question, Index(Hole(args.folder).documents()), backend)
+    if args.seance:
+        print(SEANCE_NOTICE, file=sys.stderr)
+    answer = ask(args.question, Index(Hole(args.folder).documents()), backend, summon if args.seance else None)
     print(answer.text)
     if answer.sources:
         print("\nSources:")
@@ -151,6 +161,7 @@ def build_parser():
     s.add_argument("--port", type=int, default=7070, help="TCP port (70 is traditional but needs root)")
     s.add_argument("--hostname", default="localhost", help="hostname written into menu links")
     s.add_argument("--bind", default="127.0.0.1", help="address to listen on (0.0.0.0 to share on your network)")
+    s.add_argument("--seance", action="store_true", help=SEANCE_HELP)
     s.add_argument("--no-summaries", action="store_true", help="don't ask the model for menu blurbs")
     s.add_argument("--web", type=int, nargs="?", const=8070, metavar="PORT",
                    help="also serve a browser view of the hole (default port 8070)")
@@ -163,6 +174,7 @@ def build_parser():
     a = sub.add_parser("ask", parents=[model_args], help="ask Veronica a question without running a server")
     a.add_argument("folder")
     a.add_argument("question")
+    a.add_argument("--seance", action="store_true", help=SEANCE_HELP)
     a.set_defaults(func=cmd_ask)
 
     b = sub.add_parser("browse", help="a tiny interactive Gopher client")

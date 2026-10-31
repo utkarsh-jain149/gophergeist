@@ -551,3 +551,123 @@ def test_dataset_teaches_refusals_and_drops_bad_answers():
     assert not good_answer("The archives are silent, but [1] says pizza.", answerable=False)
     assert not good_answer("## Answer\nGopher [1]", answerable=True)  # markdown
     assert parse_questions("1. Who made Archie?\n- why?\n* What is WAIS exactly?", 5) == ["Who made Archie?", "What is WAIS exactly?"]
+
+
+# ---- séance mode (internet sources are faked; nothing here touches the network) ----
+
+def fake_spirits(query):
+    from gophergeist.seance import Spirit
+
+    fake_spirits.asked.append(query)
+    return [
+        Spirit("Paris", "Paris is the capital and largest city of France.", "URL:https://en.wikipedia.org/wiki/Paris",
+               "Wikipedia"),
+        Spirit("Travel notes: France", "The capital of France is Paris, on the Seine.",
+               "gopher://gopher.example.org:70/0/phlog/france.txt", "Gopherspace"),
+    ]
+
+
+fake_spirits.asked = []
+
+
+def test_needs_seance_only_when_the_hole_cannot_answer(hole):
+    from gophergeist.veronica import needs_seance
+
+    index = Index(Hole(hole).documents())
+    assert needs_seance("what is the capital of France", index.search("what is the capital of France"))
+    assert not needs_seance("who wrote jughead", index.search("who wrote jughead"))
+    assert not needs_seance("the", [])  # nothing left after stopwords
+
+
+def test_seance_reaches_beyond_when_archives_are_silent(hole):
+    from gophergeist.veronica import SEANCE_SYSTEM
+
+    fake_spirits.asked = []
+    spirit = FakeSpirit("Beyond the veil, a voice: Paris is the capital of France [1][2].")
+    answer = ask("what is the capital of France", Index(Hole(hole).documents()), spirit, fake_spirits)
+    system, prompt = spirit.calls[0]
+    assert system == SEANCE_SYSTEM and prompt.startswith("Sources summoned from beyond the veil:")
+    assert "[1] Paris (Wikipedia): Paris is the capital" in prompt
+    assert answer.spoke and answer.sources[0] == ("URL:https://en.wikipedia.org/wiki/Paris", "Paris (Wikipedia)")
+
+
+def test_seance_stays_home_when_the_files_know(hole):
+    fake_spirits.asked = []
+    ask("who wrote jughead", Index(Hole(hole).documents()), FakeSpirit(), fake_spirits)
+    assert fake_spirits.asked == []
+
+
+def test_seance_is_off_by_default(hole):
+    srv = GopherServer(hole, backend=FakeSpirit())
+    assert srv.summon is None
+    assert "silent" in protocol.parse_menu(srv.respond(SEARCH, "what is the capital of France"))[2]["display"]
+
+
+def test_seance_without_internet_falls_back_to_silence(hole):
+    from gophergeist.seance import summon
+
+    def offline(query):
+        raise OSError("no route to host")
+
+    assert summon("anything", sources=(offline,)) == []
+    answer = ask("capital of France", Index(Hole(hole).documents()), FakeSpirit(), lambda q: summon(q, (offline,)))
+    assert "silent" in answer.text
+
+
+def test_seance_menu_links_to_the_web_and_gopherspace(hole):
+    srv = GopherServer(hole, backend=FakeSpirit("Paris [1]."), hostname="ghost.local", port=7070, seance=fake_spirits)
+    entries = protocol.parse_menu(srv.respond(SEARCH, "what is the capital of France"))
+    links = {(e["type"], e["selector"], e["host"]) for e in entries if e["type"] not in "i7"}
+    assert ("h", "URL:https://en.wikipedia.org/wiki/Paris", "ghost.local") in links
+    assert ("0", "/phlog/france.txt", "gopher.example.org") in links
+    assert b"https://en.wikipedia.org/wiki/Paris" in srv.respond("URL:https://en.wikipedia.org/wiki/Paris")
+
+
+def test_seance_web_view_links_out(hole):
+    from gophergeist.web import WebGateway
+
+    gw = WebGateway(GopherServer(hole, backend=StreamingSpirit("Paris [1]."), port=7070, seance=fake_spirits), port=0)
+    gw.serve_in_background()
+    try:
+        status, _, body = _get(f"http://127.0.0.1:{gw.port}/7/~veronica?q=capital+of+France")
+    finally:
+        gw.shutdown()
+    assert status == 200
+    assert "href='https://en.wikipedia.org/wiki/Paris'" in body
+    assert "href='gopher://gopher.example.org:70/0/phlog/france.txt'" in body
+
+
+def test_search_gopherspace_reads_veronica2_results():
+    from gophergeist.seance import VERONICA2, search_gopherspace
+
+    menu = protocol.end_menu([
+        protocol.info("Veronica-2 results"),
+        protocol.item("0", "Gopher history", "/history.txt", "gopher.example.org", 70),
+        protocol.item("1", "A haunted phlog", "/phlog", "ghost.example.org", 7070),
+    ])
+    calls = []
+
+    def fetch(host, port, selector, query="", timeout=0):
+        calls.append((host, selector, query))
+        return menu if selector == VERONICA2[2] else protocol.text_body("Gopher was born in Minnesota.")
+
+    spirits = search_gopherspace("gopher history", fetch=fetch)
+    assert calls[0] == ("gopher.floodgap.com", "/v2/vs", "gopher history")
+    assert spirits[0].text == "Gopher was born in Minnesota." and spirits[0].origin == "Gopherspace"
+    assert spirits[1].selector == "gopher://ghost.example.org:7070/1/phlog"
+
+
+def test_search_wikipedia_uses_summaries():
+    from gophergeist.seance import search_wikipedia
+
+    def get_json(url):
+        if "list=search" in url:
+            assert "srsearch=capital+of+France" in url
+            return {"query": {"search": [{"title": "Paris"}, {"title": "Empty Page"}]}}
+        if url.endswith("Paris"):
+            return {"extract": "Paris is the capital of France.",
+                    "content_urls": {"desktop": {"page": "https://en.wikipedia.org/wiki/Paris"}}}
+        return {}
+
+    spirits = search_wikipedia("capital of France", get_json=get_json)
+    assert [(s.title, s.selector) for s in spirits] == [("Paris", "URL:https://en.wikipedia.org/wiki/Paris")]
