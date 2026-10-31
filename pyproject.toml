@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gophergeist"
+version = "0.1.0"
+description = "A Gopher server haunted by a local open-weight model. Veronica, Gopher's dead search engine, answers again."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+gophergeist = "gophergeist.cli:main"
+
+[tool.setuptools]
+packages = ["gophergeist"]

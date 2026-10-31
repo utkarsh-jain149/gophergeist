@@ -1,0 +1,18 @@
+Gopher item types
+
+Every line in a Gopher menu starts with one character that says what kind of
+thing the line points to. The common ones:
+
+  0   a plain text file
+  1   another menu (a directory)
+  3   an error
+  7   a search: the client asks you for words and sends them to the server
+  9   a binary file
+  g   a GIF image
+  I   some other image
+  h   an HTML page (a later addition)
+  i   an informational line of plain text (not in the RFC, but universal)
+
+After the type comes the display text, then a tab, the selector, a tab, the
+host, a tab, and the port. A menu ends with a line holding a single period.
+That is nearly the whole protocol.

@@ -1,0 +1,16 @@
+finger (1971)
+
+finger let you look up a user on another computer and see whether they were
+logged in, when they last read their mail, and the contents of their .plan
+and .project files. Les Earnest wrote the first version around 1971 at the
+Stanford Artificial Intelligence Laboratory. It was later written up as
+RFC 742 in 1977 and RFC 1288 in 1991.
+
+People turned their .plan files into tiny blogs long before blogs existed.
+Game programmer John Carmack famously posted development notes in his .plan
+file, and fans would finger his account to read them.
+
+finger faded out because it leaked too much about users to strangers, and
+because a bug in one finger server was exploited by the Morris worm in 1988.
+
+Favorite food on the altar: a .plan file that says "nothing planned".

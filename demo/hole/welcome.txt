@@ -1,0 +1,17 @@
+Welcome, traveler
+
+You have tunneled into a gopherhole. Before the web won, this is how a lot of
+the internet looked: plain menus, plain text, and nothing that moved.
+
+This hole is haunted. Pick "Ask Veronica" on the main menu and type a
+question. Veronica was Gopherspace's search engine in 1992. She has been
+asleep for a long time, but a small open-weight model running on this very
+machine lends her a voice. She only answers from the documents in this hole,
+and she tells you which ones she read.
+
+Look around:
+
+  history/   how Gopher was born, and how it died
+  ofrenda/   an altar for other protocols the internet left behind
+
+Leave the lights off. Nothing here needs the internet.

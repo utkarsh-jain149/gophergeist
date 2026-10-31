@@ -1,0 +1,17 @@
+# Ollama recipe for the fine-tuned Veronica. Put this next to the .gguf the notebook gives you, then:
+#   ollama create llama3.2-veronica:1b -f Modelfile
+#   gophergeist serve demo/hole --model llama3.2-veronica:1b --web
+FROM ./veronica-q4_k_m.gguf
+
+TEMPLATE """{{ if .System }}<|start_header_id|>system<|end_header_id|>
+
+{{ .System }}<|eot_id|>{{ end }}{{ if .Prompt }}<|start_header_id|>user<|end_header_id|>
+
+{{ .Prompt }}<|eot_id|>{{ end }}<|start_header_id|>assistant<|end_header_id|>
+
+{{ .Response }}<|eot_id|>"""
+
+PARAMETER stop "<|eot_id|>"
+PARAMETER stop "<|start_header_id|>"
+PARAMETER temperature 0.3
+PARAMETER num_ctx 2048

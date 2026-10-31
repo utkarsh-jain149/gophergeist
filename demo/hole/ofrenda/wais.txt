@@ -1,0 +1,15 @@
+WAIS (around 1990)
+
+WAIS, Wide Area Information Servers, was a system for searching the full text
+of documents on remote servers. It was developed around 1990 by Thinking
+Machines Corporation together with Apple, Dow Jones and KPMG. Brewster Kahle
+led the work at Thinking Machines.
+
+Unlike Archie, WAIS searched what was inside documents, and it ranked results
+by relevance. Gopher and early web servers often linked to WAIS databases
+for searching.
+
+Brewster Kahle went on to found the Internet Archive in 1996, which is why
+so much of the early internet can still be visited today.
+
+Favorite food on the altar: relevance-ranked results, still warm.
