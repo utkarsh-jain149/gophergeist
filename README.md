@@ -15,9 +15,9 @@ gopherhole that works in `curl`, Lynx, or any Gopher client from the last 30 yea
 model running on your own machine**, and cites the documents she read.
 
 ```
-$ gophergeist serve demo/hole
-gophergeist 0.1.0 haunting /home/me/gophergeist/demo/hole
-  spirit: llama3.2:3b via Ollama
+$ gophergeist serve
+gophergeist 0.1.0 haunting .../gophergeist/demo
+  spirit: utkarsh2023/llama3.2-veronica:1b via Ollama
   writing menu blurbs for 10 documents in the background...
   listening on gopher://localhost:7070/
   try: curl gopher://localhost:7070/   or   lynx gopher://localhost:7070/
@@ -79,7 +79,7 @@ from the index.
 
 ## What's in the hole
 
-The bundled `demo/hole` is a small gopherhole about Gopher itself:
+The bundled demo (used whenever you don't name a folder) is a small, haunted gopherhole about Gopher itself:
 
 - **`history/`**: how Gopher was born, the item types, Veronica and Jughead, and the licensing decision that sank it.
 - **`ofrenda/`**: for Día de los Muertos, an altar for protocols the internet left behind (Archie, WAIS, finger),
@@ -89,22 +89,27 @@ Use your own folder instead: notes, a zine, a family history, an old blog export
 
 ## Quick start
 
-You need Python 3.9+ and a local model server. No other dependencies, no API keys, no accounts.
+Two installs, one command. No API keys, no accounts.
 
 ```bash
-# 1. A local open-weight model (any Ollama model works)
-ollama pull llama3.2:3b
+# 1. Install Ollama (https://ollama.com/download) and gophergeist
+pipx install git+https://github.com/utkarsh-jain149/gophergeist     # or: pip install git+...
 
-# 2. gophergeist
-git clone <this repo> && cd gophergeist
-pip install -e .
+# 2. Raise the ghost, then open http://localhost:8070
+gophergeist serve --web
+```
 
-# 3. Haunt a folder
-gophergeist serve demo/hole
+On first run gophergeist downloads the fine-tuned Veronica (`utkarsh2023/llama3.2-veronica:1b`, about
+770 MB) through Ollama, once. If that can't be pulled it uses the stock `llama3.2:1b` instead. Any other Ollama
+model works with `--model`, and it's downloaded the same way.
 
-# 4. Visit it (any of these)
-gophergeist browse
-gophergeist serve demo/hole --web     # then open http://localhost:8070 in a browser
+To haunt your own folder of text files: `gophergeist serve ~/my-notes --web`.
+
+Other ways in:
+
+```bash
+gophergeist browse                                   # a tiny terminal Gopher client
+gophergeist ask "who wrote jughead?"                 # one question, no server
 curl gopher://localhost:7070/
 lynx gopher://localhost:7070/
 curl "gopher://localhost:7070/7/~veronica%09what%20killed%20gopher"
@@ -119,19 +124,19 @@ llamafile, LM Studio and vLLM**:
 # For example, a llamafile: one executable with the weights inside. Download once, run forever.
 ./Llama-3.2-3B-Instruct.Q6_K.llamafile --server --nobrowser   # serves on :8080
 
-gophergeist serve demo/hole --backend openai --model-host http://localhost:8080/v1
+gophergeist serve --backend openai --model-host http://localhost:8080/v1
 ```
 
-`gophergeist doctor` checks that your model answers. `gophergeist ask demo/hole "question"` asks Veronica
-without running a server.
+`gophergeist doctor` checks that your model answers.
 
 ## Works with the internet off
 
 Everything gophergeist needs lives on your machine, so after a one-time download it runs with no connection at all:
 
-1. **While online, once:** `pip install -e .` and `ollama pull llama3.2:3b` (or download a single llamafile).
+1. **While online, once:** install gophergeist and run `gophergeist serve` once so the model downloads (or
+   download a single llamafile).
 2. **Unplug.** Turn off Wi-Fi.
-3. `gophergeist serve demo/hole --web` and open `http://localhost:8070`, or use `gophergeist browse`.
+3. `gophergeist serve --web` and open `http://localhost:8070`, or use `gophergeist browse`.
 
 Menus, documents, Veronica's answers and the menu blurbs all keep working. The web view is a single HTML page per
 request with inline CSS: no CDN, no web fonts, no JavaScript, no analytics. A test checks that its pages reference
@@ -147,8 +152,8 @@ No GPU required. A GPU only makes answers faster.
 
 | Your machine | Suggested setup |
 | --- | --- |
-| Laptop or desktop with an NVIDIA/Apple GPU | `llama3.2:3b` (the default), or bigger |
-| Ordinary laptop, CPU only, 8 GB RAM | `--model llama3.2:1b` or `--model gemma3:1b` |
+| Laptop or desktop with an NVIDIA/Apple GPU | the default fine-tuned 1B, or `--model llama3.2:3b` and bigger |
+| Ordinary laptop, CPU only, 8 GB RAM | the default fine-tuned 1B (`llama3.2-veronica:1b`) |
 | Old laptop, Raspberry Pi 5, a $5 VPS | a 1B model, or `--backend none` (index only, instant) |
 
 ### Making CPU answers feel fast
@@ -177,7 +182,7 @@ a 1B student learns the behaviour. It learns how to answer, not what the facts a
 needs retraining.
 
 ```bash
-gophergeist dataset demo/hole --model qwen2.5:7b    # writes veronica-train.jsonl / veronica-eval.jsonl
+gophergeist dataset --model qwen2.5:7b                 # writes veronica-train.jsonl / veronica-eval.jsonl
 ```
 
 `finetune/veronica_colab.ipynb` runs the whole pipeline on a free Colab GPU: teacher, LoRA training with Unsloth,
@@ -189,8 +194,8 @@ By default Veronica only knows your files. Ask about anything else and she says 
 séance mode and she reaches beyond the veil instead:
 
 ```bash
-gophergeist serve demo/hole --web --seance
-gophergeist ask demo/hole "what is the capital of France?" --seance
+gophergeist serve --web --seance
+gophergeist ask "what is the capital of France?" --seance
 ```
 
 When the passages in your folder cover less than half the words in a question, the question is sent to two
@@ -212,11 +217,11 @@ and she falls back to "the archives are silent."
 
 | Command | What it does |
 | --- | --- |
-| `gophergeist serve FOLDER` | Serve a folder as a gopherhole on port 7070. Writes menu blurbs in the background. `--web` adds a browser view on port 8070. `--seance` lets Veronica search online when your files are silent. `--bind 0.0.0.0` shares it on your network; `--port 70` is traditional (needs root). |
+| `gophergeist serve [FOLDER]` | Serve a folder (default: the bundled demo) as a gopherhole on port 7070. Writes menu blurbs in the background. `--web` adds a browser view on port 8070. `--seance` lets Veronica search online when your files are silent. `--bind 0.0.0.0` shares it on your network; `--port 70` is traditional (needs root). |
 | `gophergeist browse [URL]` | A tiny interactive Gopher client. Works on any gopherhole, not just this one. `--ask "..."` goes straight to Veronica. |
-| `gophergeist ask FOLDER "question"` | Ask Veronica from the command line. `--seance` works here too. |
-| `gophergeist index FOLDER` | Write all menu blurbs now instead of in the background. |
-| `gophergeist dataset FOLDER...` | Write fine-tuning data that teaches a small model to be Veronica (see `finetune/`). |
+| `gophergeist ask "question" [FOLDER]` | Ask Veronica from the command line. `--seance` works here too. |
+| `gophergeist index [FOLDER]` | Write all menu blurbs now instead of in the background. |
+| `gophergeist dataset [FOLDER...]` | Write fine-tuning data that teaches a small model to be Veronica (see `finetune/`). |
 | `gophergeist doctor` | Check that the local model is reachable and answers. |
 
 Every model command takes `--backend ollama|openai|none`, `--model` and `--model-host`.
@@ -227,8 +232,8 @@ Every model command takes `--backend ollama|openai|none`, `--model` and `--model
 | --- | --- |
 | **Gopher, RFC 1436** (open standard, 1993) | The whole wire protocol fits on a page: one request line in, a menu or a document out. The server is under 200 lines of `asyncio`. |
 | **Ollama** or **llama.cpp / llamafile** (open source) | Runs the model on `localhost`. gophergeist talks to them over HTTP with `urllib`, no SDK. |
-| **Llama 3.2 3B** (open weights, default) | Gives Veronica her voice, and writes the one-line blurb under each menu entry. Swap in `qwen2.5:3b`, `gemma3`, `phi4-mini`, or anything else your machine can run. |
-| **BM25** (plain Python) | Finds the passages first. The model only reads the top few and must cite them as `[1]`, `[2]`, so a 3B model stays grounded instead of making things up. |
+| **Llama 3.2 1B, fine-tuned as Veronica** (open weights, default) | Gives Veronica her voice, and writes the one-line blurb under each menu entry. Fine-tuned on a free Colab GPU (see `finetune/`) and published to the Ollama registry. Swap in `qwen2.5:3b`, `gemma3`, `phi4-mini`, or anything else your machine can run. |
+| **BM25** (plain Python) | Finds the passages first. The model only reads the top few and must cite them as `[1]`, `[2]`, so a small model stays grounded instead of making things up. |
 
 ### The index finds, the ghost speaks
 
@@ -276,12 +281,12 @@ make possible:
   that knows the job, and you keep the result as a single file. A closed API lets you rent a fine-tune; it doesn't
   give you the model to keep on a USB stick.
 - **It costs nothing to leave running.** A gopherhole is meant to sit there for years. Per-token pricing and a
-  server that's always on don't mix; a 3B model on hardware you already own does.
+  server that's always on don't mix; a 1B model on hardware you already own does.
 
 ### Where open worked better than closed
 
 - **A tiny model is enough.** Retrieval does the finding, so the model only has to read four short passages and
-  answer from them, which is well within what a 3B local model handles. The citations make it easy to see when it
+  answer from them, which is well within what a small local model handles. The citations make it easy to see when it
   strays. A bigger hosted model would mostly be paying for knowledge Veronica is told not to use.
 - **Five runtimes for the price of one.** Because the open ecosystem converged on the same small HTTP APIs, one
   hundred-line `model.py` supports Ollama, llama.cpp, llamafile, LM Studio and vLLM, with no SDK.
@@ -322,4 +327,7 @@ The demo hole is my own summary; corrections welcome.
 
 ## License
 
-MIT. Unlike Gopher in 1993, you will never be asked for a license fee.
+The code is MIT. Unlike Gopher in 1993, you will never be asked for a license fee.
+
+The fine-tuned Veronica model is derived from Llama 3.2 1B and is covered by the
+[Llama 3.2 Community License](https://www.llama.com/llama3_2/license/). **Built with Llama.**

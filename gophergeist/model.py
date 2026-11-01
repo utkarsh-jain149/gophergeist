@@ -14,7 +14,10 @@ import urllib.request
 
 DEFAULT_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 DEFAULT_OPENAI_URL = "http://localhost:8080/v1"
-DEFAULT_MODEL = "llama3.2:3b"
+# The fine-tuned Veronica published to the Ollama registry, then a stock model if she can't be pulled.
+VERONICA_MODEL = "YOUR_OLLAMA_USER/llama3.2-veronica:1b"
+FALLBACK_MODEL = "llama3.2:1b"
+DEFAULT_MODEL = os.environ.get("GOPHERGEIST_MODEL", VERONICA_MODEL)
 
 
 class ModelError(RuntimeError):
@@ -69,12 +72,43 @@ class Ollama:
     def __str__(self):
         return f"{self.model} via Ollama"
 
-    def check(self):
+    def has(self, model):
         data = _request(_url(self.host, "/api/tags"), timeout=5)
         names = [m.get("name", "") for m in data.get("models", [])]
-        wanted = self.model if ":" in self.model else self.model + ":latest"
-        if wanted not in names and self.model not in names:
+        return model in names or (":" not in model and model + ":latest" in names)
+
+    def check(self):
+        if not self.has(self.model):
             raise ModelError(f"Ollama is running but {self.model} isn't pulled. Try: ollama pull {self.model}")
+
+    def pull(self, model, progress=None):
+        """Download a model through Ollama. progress(status, completed, total) is called as it goes."""
+        url = _url(self.host, "/api/pull")
+        for line in _stream_lines(url, {"model": model, "stream": True}, timeout=3600):
+            try:
+                data = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if data.get("error"):
+                raise ModelError(f"Couldn't pull {model}: {data['error']}")
+            if progress:
+                progress(data.get("status", ""), data.get("completed"), data.get("total"))
+
+    def ensure(self, fallbacks=(), progress=None):
+        """Make sure a usable model is present, pulling it on first run.
+        Tries self.model, then each fallback; switches self.model to whichever worked."""
+        errors = []
+        for model in (self.model, *fallbacks):
+            try:
+                if not self.has(model):
+                    self.pull(model, progress)
+                self.model = model
+                return model
+            except ModelError as e:
+                if "Could not reach" in str(e):
+                    raise  # Ollama itself isn't running; no point trying other models
+                errors.append(str(e))
+        raise ModelError("; ".join(errors))
 
     def warm(self):
         """Load the model into memory now, so the first visitor doesn't wait for it."""

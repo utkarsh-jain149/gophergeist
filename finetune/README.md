@@ -12,7 +12,7 @@ the cells top to bottom.
 You can also build the dataset on any machine that runs a teacher model:
 
 ```bash
-gophergeist dataset demo/hole ~/my-notes --model qwen2.5:7b --per-passage 8
+gophergeist dataset gophergeist/demo ~/my-notes --model qwen2.5:7b --per-passage 8
 ```
 
 That writes `veronica-train.jsonl` and `veronica-eval.jsonl` in the standard chat format

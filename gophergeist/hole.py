@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -99,6 +100,10 @@ class Summaries:
     def __init__(self, hole):
         self.hole = hole
         self.path = hole.root / CACHE_DIR / "summaries.json"
+        if not os.access(hole.root, os.W_OK):
+            # e.g. the demo hole inside an installed package: keep blurbs in the user's cache instead
+            tag = hashlib.sha256(str(hole.root).encode()).hexdigest()[:12]
+            self.path = Path.home() / ".cache" / "gophergeist" / tag / "summaries.json"
         self.lock = threading.Lock()
         try:
             self.cache = json.loads(self.path.read_text())
@@ -144,5 +149,5 @@ class Summaries:
     def save(self):
         with self.lock:
             data = json.dumps(self.cache, indent=1, sort_keys=True)
-        self.path.parent.mkdir(exist_ok=True)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(data)

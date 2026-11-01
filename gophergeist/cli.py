@@ -3,11 +3,12 @@
 import argparse
 import asyncio
 import sys
+from pathlib import Path
 
 from . import __version__, client, protocol
 from .hole import Hole, Summaries
-from .model import ModelError, make_backend
-from .server import SEARCH, GopherServer
+from .model import FALLBACK_MODEL, ModelError, Ollama, make_backend
+from .server import BANNER, SEARCH, GopherServer
 from .veronica import Index, ask
 from .seance import summon
 from .web import WebGateway
@@ -18,13 +19,39 @@ SEANCE_NOTICE = ("  seance mode: questions your files can't answer are sent to g
                  "and en.wikipedia.org")
 
 
+DEMO_HOLE = Path(__file__).resolve().parent / "demo"
+
+
+def _folder(folder):
+    """The folder to haunt; with none given, the haunted demo hole that ships with gophergeist."""
+    return folder or DEMO_HOLE
+
+
+def _pull_progress(status, completed, total):
+    if completed and total:
+        print(f"\r  {status}: {completed * 100 // total}% of {total / 1e6:.0f} MB   ", end="", file=sys.stderr, flush=True)
+    elif status:
+        print(f"\r  {status}{' ' * 30}", file=sys.stderr, flush=True)
+
+
 def _backend(args, quiet=False):
-    """The configured model, or None if it isn't reachable (we never refuse to serve over it)."""
+    """The configured model, or None if it isn't reachable (we never refuse to serve over it).
+    With Ollama, a missing model is downloaded on first run: the fine-tuned Veronica by default,
+    falling back to a stock 1B model if she can't be pulled."""
     backend = make_backend(args.backend, args.model, args.model_host)
     if backend is None:
         return None
     try:
-        backend.check()
+        if isinstance(backend, Ollama):
+            fallbacks = () if args.model else (FALLBACK_MODEL,)
+            wanted = backend.model
+            if not quiet and not backend.has(wanted):
+                print(f"  First run: downloading {wanted} through Ollama (one time only)...", file=sys.stderr)
+            backend.ensure(fallbacks, None if quiet else _pull_progress)
+            if not quiet and backend.model != wanted:
+                print(f"  ({wanted} isn't available, so using {backend.model} instead.)", file=sys.stderr)
+        else:
+            backend.check()
     except ModelError as e:
         if not quiet:
             print(f"  (no spirit: {e}. Veronica will answer from the index alone.)", file=sys.stderr)
@@ -34,8 +61,12 @@ def _backend(args, quiet=False):
 
 def cmd_serve(args):
     backend = _backend(args)
-    server = GopherServer(args.folder, backend, hostname=args.hostname, port=args.port,
+    server = GopherServer(_folder(args.folder), backend, hostname=args.hostname, port=args.port,
                           summaries=not args.no_summaries, seance=args.seance)
+    print()
+    for line in BANNER:
+        print(line)
+    print()
     print(f"gophergeist {__version__} haunting {server.hole.root}")
     print(f"  spirit: {backend or 'none (index only)'}")
     if args.seance:
@@ -73,8 +104,8 @@ def cmd_index(args):
     if backend is None:
         print("Menu blurbs need a model; without one, menus show each file's first line.")
         return 1
-    summaries = Summaries(Hole(args.folder))
-    print(f"Summarizing {args.folder} with {backend}...")
+    summaries = Summaries(Hole(_folder(args.folder)))
+    print(f"Summarizing {_folder(args.folder)} with {backend}...")
     n = summaries.build(backend, lambda doc, line: print(f"  {doc.selector}: {line}"))
     print(f"Wrote {n} new blurbs ({len(summaries.cache)} cached).")
     return 0
@@ -84,7 +115,7 @@ def cmd_ask(args):
     backend = _backend(args)
     if args.seance:
         print(SEANCE_NOTICE, file=sys.stderr)
-    answer = ask(args.question, Index(Hole(args.folder).documents()), backend, summon if args.seance else None)
+    answer = ask(args.question, Index(Hole(_folder(args.folder)).documents()), backend, summon if args.seance else None)
     print(answer.text)
     if answer.sources:
         print("\nSources:")
@@ -121,7 +152,7 @@ def cmd_dataset(args):
     if teacher is None:
         print("Building a dataset needs a teacher model.", file=sys.stderr)
         return 1
-    docs = [d for folder in args.folders for d in Hole(folder).documents()]
+    docs = [d for folder in (args.folders or [None]) for d in Hole(_folder(folder)).documents()]
     print(f"Writing Veronica lessons from {len(docs)} documents with {teacher} as the teacher...")
     examples = build(docs, teacher, per_passage=args.per_passage, progress=lambda m: print(f"  {m}"))
     n_train, n_eval = write_jsonl(examples, args.output, args.eval)
@@ -157,7 +188,7 @@ def build_parser():
     sub = p.add_subparsers(dest="command", required=True)
 
     s = sub.add_parser("serve", parents=[model_args], help="serve a folder as a gopherhole")
-    s.add_argument("folder")
+    s.add_argument("folder", nargs="?", help="folder of text files (default: the bundled haunted demo)")
     s.add_argument("--port", type=int, default=7070, help="TCP port (70 is traditional but needs root)")
     s.add_argument("--hostname", default="localhost", help="hostname written into menu links")
     s.add_argument("--bind", default="127.0.0.1", help="address to listen on (0.0.0.0 to share on your network)")
@@ -168,12 +199,12 @@ def build_parser():
     s.set_defaults(func=cmd_serve)
 
     i = sub.add_parser("index", parents=[model_args], help="write model blurbs for every document now")
-    i.add_argument("folder")
+    i.add_argument("folder", nargs="?", help="default: the bundled demo")
     i.set_defaults(func=cmd_index)
 
     a = sub.add_parser("ask", parents=[model_args], help="ask Veronica a question without running a server")
-    a.add_argument("folder")
     a.add_argument("question")
+    a.add_argument("folder", nargs="?", help="default: the bundled demo")
     a.add_argument("--seance", action="store_true", help=SEANCE_HELP)
     a.set_defaults(func=cmd_ask)
 
@@ -183,7 +214,7 @@ def build_parser():
     b.set_defaults(func=cmd_browse)
 
     ds = sub.add_parser("dataset", parents=[model_args], help="write fine-tuning data that teaches a small model to be Veronica")
-    ds.add_argument("folders", nargs="+", help="one or more folders of text to learn from")
+    ds.add_argument("folders", nargs="*", help="folders of text to learn from (default: the bundled demo)")
     ds.add_argument("-o", "--output", default="veronica-train.jsonl")
     ds.add_argument("--eval", default="veronica-eval.jsonl", help="held-out examples for checking the result")
     ds.add_argument("--per-passage", type=int, default=8, help="questions to write per passage")

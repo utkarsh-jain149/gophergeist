@@ -17,7 +17,7 @@ from gophergeist.model import ModelError, Ollama, OpenAICompatible, make_backend
 from gophergeist.server import SEARCH, GopherServer
 from gophergeist.veronica import Index, ask, chunk_text, stem
 
-DEMO = Path(__file__).resolve().parent.parent / "demo" / "hole"
+DEMO = Path(__file__).resolve().parent.parent / "gophergeist" / "demo"
 
 
 class FakeSpirit:
@@ -671,3 +671,87 @@ def test_search_wikipedia_uses_summaries():
 
     spirits = search_wikipedia("capital of France", get_json=get_json)
     assert [(s.title, s.selector) for s in spirits] == [("Paris", "URL:https://en.wikipedia.org/wiki/Paris")]
+
+
+# ---- first-run experience: auto-pull, fallback model, bundled demo ----------
+
+class _PullStub(BaseHTTPRequestHandler):
+    present = set()
+    pulls = []
+    available = {"llama3.2:1b"}
+
+    def log_message(self, *args):
+        pass
+
+    def do_GET(self):
+        data = json.dumps({"models": [{"name": n} for n in sorted(self.present)]}).encode()
+        self.send_response(200)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_POST(self):
+        body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        model = body["model"]
+        _PullStub.pulls.append(model)
+        if model in self.available:
+            _PullStub.present.add(model)
+            lines = [{"status": "pulling manifest"}, {"status": "downloading", "completed": 50, "total": 100},
+                     {"status": "success"}]
+        else:
+            lines = [{"status": "pulling manifest"}, {"error": "pull model manifest: file does not exist"}]
+        data = "".join(json.dumps(x) + "\n" for x in lines).encode()
+        self.send_response(200)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+
+@pytest.fixture
+def pull_stub():
+    _PullStub.present, _PullStub.pulls = set(), []
+    httpd = HTTPServer(("127.0.0.1", 0), _PullStub)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{httpd.server_port}"
+    httpd.shutdown()
+
+
+def test_first_run_pulls_the_model(pull_stub):
+    o = Ollama("llama3.2:1b", pull_stub)
+    seen = []
+    assert o.ensure(progress=lambda *a: seen.append(a)) == "llama3.2:1b"
+    assert _PullStub.pulls == ["llama3.2:1b"] and ("downloading", 50, 100) in seen
+    o.ensure()
+    assert _PullStub.pulls == ["llama3.2:1b"]  # already present: no second download
+
+
+def test_falls_back_when_veronica_cannot_be_pulled(pull_stub):
+    from gophergeist.model import FALLBACK_MODEL, VERONICA_MODEL
+
+    o = Ollama(VERONICA_MODEL, pull_stub)
+    assert o.ensure(fallbacks=(FALLBACK_MODEL,)) == FALLBACK_MODEL
+    assert o.model == FALLBACK_MODEL and _PullStub.pulls == [VERONICA_MODEL, FALLBACK_MODEL]
+
+
+def test_ensure_without_ollama_raises_once():
+    o = Ollama("x", "http://127.0.0.1:9")
+    with pytest.raises(ModelError, match="Could not reach"):
+        o.ensure(fallbacks=("y",))
+
+
+def test_cli_defaults_to_the_bundled_demo(capsys):
+    from gophergeist.cli import main
+
+    assert main(["ask", "who wrote jughead?", "--backend", "none"]) == 0
+    assert "Rhett" in capsys.readouterr().out
+
+
+def test_read_only_hole_keeps_blurbs_in_user_cache(hole, monkeypatch, tmp_path):
+    import os as _os
+
+    monkeypatch.setattr(_os, "access", lambda path, mode: False)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    s = Summaries(Hole(hole))
+    assert str(s.path).startswith(str(tmp_path / "home" / ".cache" / "gophergeist"))
+    s.build(FakeSpirit("blurb"))
+    assert s.path.exists() and not (hole / ".gophergeist").exists()
