@@ -1,5 +1,4 @@
-*This is a submission for the [Hacktoberfest Open-Source AI Challenge: Ghost in the Machine](https://dev.to/challenges)*
-<!-- TODO: swap in the exact challenge link from the submission template -->
+*This is a submission for the [Hacktoberfest Open-Source AI Challenge: Ghost in the Machine](https://dev.to/challenges/hacktoberfest-week4-2026-10-26)*
 
 # 👻 gophergeist
 
@@ -39,7 +38,7 @@ food to leave on the altar. 🕯️
 
 ## Demo
 
-<!-- TODO: add a GIF or short video: `gophergeist serve --web`, then ask Veronica something -->
+![gophergeist demo: raising the ghost, browsing the hole, asking Veronica, and a séance](https://raw.githubusercontent.com/utkarsh-jain149/gophergeist/master/docs/demo.gif)
 
 ```
 $ gophergeist serve --web
@@ -62,7 +61,8 @@ Asking her something:
 $ gophergeist browse --ask "who wrote jughead?"
        Veronica, asked: "who wrote jughead?"
 
-       <!-- TODO: paste Veronica's real answer here -->
+       Jughead was written by Rhett "Jonzy" Jones at the University of Utah
+       in 1993 [1].
 
        Sources:
   1. TXT [1] veronica-and-jughead.txt
@@ -144,7 +144,18 @@ A stock 1B model sometimes forgets to cite or wanders off the sources. So I taug
 It learns *how* to answer, not *what* the facts are. The whole pipeline is in
 [`finetune/veronica_colab.ipynb`](finetune/veronica_colab.ipynb).
 
-<!-- TODO: stock llama3.2:1b vs fine-tuned, same question: time + did it cite? -->
+Same questions, same three passages, same 4-bit size (stock `llama3.2:1b-instruct-q4_K_M` vs my Veronica), on my
+laptop's CPU:
+
+| Question | Stock Llama 3.2 1B | Fine-tuned Veronica |
+| --- | --- | --- |
+| "who wrote jughead?" | Got the name wrong ("Jonny") and stuck the citation at the front | "Rhett "Jonzy" Jones at the University of Utah in 1993 [1]", correct and cited (0.8 s) |
+| "why did gopher die?" | "The archives are silent", even though source [3] is literally about it | "licensing fees imposed by the University of Minnesota [3]" (1.1 s) |
+| "what's the best pizza topping?" | Silent ✔ | Silent ✔ |
+
+Speed is about the same (around a second once the model is loaded). The fine-tune didn't make her faster. It made
+her *right*: the stock model either garbled the facts or gave up on a question its sources answered.
+The pizza question never reaches either model, because the index finds nothing and Veronica refuses on her own.
 
 ### Making it fast on a normal laptop
 
