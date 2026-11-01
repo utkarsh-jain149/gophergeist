@@ -1,333 +1,226 @@
+*This is a submission for the [Hacktoberfest Open-Source AI Challenge: Ghost in the Machine](https://dev.to/challenges)*
+<!-- TODO: swap in the exact challenge link from the submission template -->
+
 # 👻 gophergeist
 
-**A Gopher server haunted by an open-weight model. Veronica, Gopherspace's long-dead search engine, answers again.**
+```
+   .-.
+  (o o)   g o p h e r g e i s t
+  | O \   a gopherhole, haunted by an open-weight model
+   \   \
+    `~~~'
+```
 
-Built for the DEV **Ghost in the Machine** challenge (Halloween and Día de los Muertos week): build something
-spooky, or something that honors the past, with open-source AI at its core.
+## What I Built
 
-Before the web won, a lot of the internet looked like this: plain menus, plain text, nothing that moved. It was
-called **Gopher**, it came out of the University of Minnesota in 1991, and for a couple of years it was the most
-popular way to find things online. Then it mostly died.
+Before the web won, the internet had **Gopher**. Plain menus, plain text, nothing that moved. It came out of the
+University of Minnesota in 1991, and for a couple of years it was *the* way to find things online. Then in 1993
+the university announced license fees for its server. That same spring CERN put the web in the public domain.
+Everyone picked the free one, and Gopher quietly died.
 
-`gophergeist` brings it back. Point it at any folder of text files and it becomes a real, standards-compliant
-gopherhole that works in `curl`, Lynx, or any Gopher client from the last 30 years. And it raises a ghost:
-**Veronica**, Gopherspace's 1992 search engine, now answers questions about the hole using a **small open-weight
-model running on your own machine**, and cites the documents she read.
+So for Halloween and Día de los Muertos I brought it back from the dead.
+
+**gophergeist** turns any folder of text files into a real Gopher server. It works with `curl`, Lynx, any Gopher
+client from the last 30 years, a tiny terminal client I built in, or a retro page in your browser.
+
+And it's haunted. **Veronica** was Gopherspace's actual search engine in 1992. She's back, and she answers your
+questions using a small open-weight model running on *your* laptop:
+
+- A keyword index finds the three passages in your files that best match your question.
+- The model reads only those, answers in Veronica's voice, and cites them like `[1]`, `[2]`.
+- If your files don't cover it, she says **"the archives are silent"** instead of making something up.
+
+I fine-tuned her myself: a 1B Llama model trained to *be* Veronica, small enough to run on a laptop with no GPU and
+no internet.
+
+The demo gopherhole is about Gopher itself, written in a haunted voice. There's also an `ofrenda/` folder, an altar for
+the protocols the internet buried (Archie, WAIS, finger), each with who made it, what it gave us, and a favourite
+food to leave on the altar. 🕯️
+
+## Demo
+
+<!-- TODO: add a GIF or short video: `gophergeist serve --web`, then ask Veronica something -->
 
 ```
-$ gophergeist serve
+$ gophergeist serve --web
+
+   .-.
+  (o o)   g o p h e r g e i s t
+  | O \   a gopherhole, haunted by an open-weight model
+   \   \
+    `~~~'
+
 gophergeist 0.1.0 haunting .../gophergeist/demo
   spirit: utkarsh2023/llama3.2-veronica:1b via Ollama
-  writing menu blurbs for 10 documents in the background...
   listening on gopher://localhost:7070/
-  try: curl gopher://localhost:7070/   or   lynx gopher://localhost:7070/
-
-$ gophergeist browse
-          .-.
-         (o o)   g o p h e r g e i s t
-         | O \   a gopherhole, haunted by an open-weight model
-          \   \
-           `~~~'
-
-  1. ASK Ask Veronica (search, answered by a local ghost)
-
-  2. DIR history/
-  3. DIR ofrenda/
-  4. TXT welcome.txt
-           Welcome, traveler
-
-  5. TXT About this ghost
-
-[number] follow  [b]ack  [q]uit >
+  web view (no internet needed): http://localhost:8070/
 ```
 
-Ask her something:
+Asking her something:
 
 ```
 $ gophergeist browse --ask "who wrote jughead?"
        Veronica, asked: "who wrote jughead?"
 
-       Jughead was written in 1993 by Rhett "Jonzy" Jones at the
-       University of Utah [1]. Unlike me, he only searched a few servers
-       at a time [1]. I remember him well. Nobody asks for him anymore.
+       <!-- TODO: paste Veronica's real answer here -->
 
        Sources:
   1. TXT [1] veronica-and-jughead.txt
   2. TXT [2] finger.txt
   3. TXT [3] archie.txt
-
-  4. ASK Ask another question
-  5. DIR Back to the main menu
 ```
 
-> The answer above is illustrative: it shows the shape of a model's reply, and the wording depends on your model.
-> The other transcripts in this README were captured from real runs.
-
-With the model switched off (`--backend none`), Veronica still answers, the way the 1992 original did: straight
-from the index.
+With no model at all (`--backend none`) she still answers, the way the 1992 original did, straight from the index:
 
 ```
        No spirit is bound to this server, so the index speaks alone:
 
        [1] Jughead followed in 1993, written by Rhett "Jonzy" Jones at the
        University of Utah.
-       [2] Les Earnest wrote the first version around 1971 at the Stanford
-       Artificial Intelligence Laboratory.
-       [3] Veronica and Jughead, Gopher's search engines, took their names
-       from Archie's comic book friends.
 ```
 
-## What's in the hole
-
-The bundled demo (used whenever you don't name a folder) is a small, haunted gopherhole about Gopher itself:
-
-- **`history/`**: how Gopher was born, the item types, Veronica and Jughead, and the licensing decision that sank it.
-- **`ofrenda/`**: for Día de los Muertos, an altar for protocols the internet left behind (Archie, WAIS, finger),
-  each with who made it, what it gave us, and a favorite food to leave on the altar.
-
-Use your own folder instead: notes, a zine, a family history, an old blog export. Anything that's text.
-
-## Quick start
-
-Two installs, one command. No API keys, no accounts.
+### Try it yourself
 
 ```bash
-# 1. Install Ollama (https://ollama.com/download) and gophergeist
-pipx install git+https://github.com/utkarsh-jain149/gophergeist     # or: pip install git+...
+# 1. Install Ollama (https://ollama.com/download), then:
+pipx install git+https://github.com/utkarsh-jain149/gophergeist
 
 # 2. Raise the ghost, then open http://localhost:8070
 gophergeist serve --web
 ```
 
-On first run gophergeist downloads the fine-tuned Veronica (`utkarsh2023/llama3.2-veronica:1b`, about
-770 MB) through Ollama, once. If that can't be pulled it uses the stock `llama3.2:1b` instead. Any other Ollama
-model works with `--model`, and it's downloaded the same way.
+If you get `gophergeist: command not found`, run `pipx ensurepath` and open a new terminal.
 
-To haunt your own folder of text files: `gophergeist serve ~/my-notes --web`.
+On the first run it downloads my fine-tuned Veronica (`utkarsh2023/llama3.2-veronica:1b`, ~770 MB) through Ollama,
+once. If that fails it falls back to the stock `llama3.2:1b`. To haunt your own notes instead:
+`gophergeist serve ~/my-notes --web`.
 
-Other ways in:
+## Code
 
-```bash
-gophergeist browse                                   # a tiny terminal Gopher client
-gophergeist ask "who wrote jughead?"                 # one question, no server
-curl gopher://localhost:7070/
-lynx gopher://localhost:7070/
-curl "gopher://localhost:7070/7/~veronica%09what%20killed%20gopher"
+{% github utkarsh-jain149/gophergeist %}
+
+```
+gophergeist/
+  server.py     # the Gopher server (RFC 1436), asyncio
+  veronica.py   # BM25 search + the ghost's prompt, streaming and fallbacks
+  model.py      # stdlib clients for Ollama and any OpenAI-compatible local server
+  web.py        # the retro browser view: inline CSS, no JS, no CDN
+  seance.py     # optional: reach Veronica-2 and Wikipedia when your files are silent
+  dataset.py    # builds the fine-tuning data
+  demo/         # the haunted demo gopherhole
+finetune/       # Colab notebook + Ollama Modelfile
+tests/          # 63 tests, all offline, with fake models and fake internet
 ```
 
-### Not using Ollama?
+Pure Python standard library, no dependencies.
 
-Anything that speaks the OpenAI-compatible chat API works, which covers **llama.cpp's `llama-server`,
-llamafile, LM Studio and vLLM**:
-
-```bash
-# For example, a llamafile: one executable with the weights inside. Download once, run forever.
-./Llama-3.2-3B-Instruct.Q6_K.llamafile --server --nobrowser   # serves on :8080
-
-gophergeist serve --backend openai --model-host http://localhost:8080/v1
-```
-
-`gophergeist doctor` checks that your model answers.
-
-## Works with the internet off
-
-Everything gophergeist needs lives on your machine, so after a one-time download it runs with no connection at all:
-
-1. **While online, once:** install gophergeist and run `gophergeist serve` once so the model downloads (or
-   download a single llamafile).
-2. **Unplug.** Turn off Wi-Fi.
-3. `gophergeist serve --web` and open `http://localhost:8070`, or use `gophergeist browse`.
-
-Menus, documents, Veronica's answers and the menu blurbs all keep working. The web view is a single HTML page per
-request with inline CSS: no CDN, no web fonts, no JavaScript, no analytics. A test checks that its pages reference
-nothing outside your machine, and in a headless browser the pages made zero requests to anything but localhost.
-
-For a fully portable kit, put this repo and a llamafile on a USB stick. Plug it into any laptop, start the
-llamafile, then run `gophergeist serve FOLDER --backend openai --web`. No install beyond Python, and nothing to
-sign in to.
-
-## What hardware do I need?
-
-No GPU required. A GPU only makes answers faster.
-
-| Your machine | Suggested setup |
-| --- | --- |
-| Laptop or desktop with an NVIDIA/Apple GPU | the default fine-tuned 1B, or `--model llama3.2:3b` and bigger |
-| Ordinary laptop, CPU only, 8 GB RAM | the default fine-tuned 1B (`llama3.2-veronica:1b`) |
-| Old laptop, Raspberry Pi 5, a $5 VPS | a 1B model, or `--backend none` (index only, instant) |
-
-### Making CPU answers feel fast
-
-On a CPU, how long an answer takes depends mostly on how much text the model has to read and how much it
-writes. gophergeist keeps both small and hides the rest:
-
-- **Short prompts.** Veronica reads only the three best passages, each trimmed to the ~450 characters most related to
-  the question, behind a one-line system prompt.
-- **Short answers.** About 80 words, capped at 160 tokens.
-- **Streaming.** In the web view, words appear as the model writes them, so you see the start of the answer in a
-  second or two instead of staring at a blank page.
-- **Warm model.** The model is loaded when the server starts and kept in memory for 30 minutes between questions,
-  so nobody waits for weights to load from disk.
-- **Cached answers.** Repeat questions come back instantly. The cache resets itself when you edit a file.
-- **Visitors first.** Menu blurbs are written in the background and pause whenever someone asks a question.
-
-These are design choices, not benchmarks. Your numbers will depend on your CPU and model, so time a few questions
-with `gophergeist ask` before you promise anyone a speed.
-
-### Fine-tune a faster Veronica
-
-A stock 1B model is fast but sometimes forgets to cite or wanders off the sources. Fine-tuning fixes that: a
-bigger open teacher model writes a few hundred example answers in Veronica's style from your own gopherhole, and
-a 1B student learns the behaviour. It learns how to answer, not what the facts are, so editing your files never
-needs retraining.
-
-```bash
-gophergeist dataset --model qwen2.5:7b                 # writes veronica-train.jsonl / veronica-eval.jsonl
-```
-
-`finetune/veronica_colab.ipynb` runs the whole pipeline on a free Colab GPU: teacher, LoRA training with Unsloth,
-and export to a GGUF you load into Ollama as `llama3.2-veronica:1b`. See [`finetune/`](finetune/README.md).
-
-## Séance mode (optional, needs the internet)
-
-By default Veronica only knows your files. Ask about anything else and she says the archives are silent. Turn on
-séance mode and she reaches beyond the veil instead:
-
-```bash
-gophergeist serve --web --seance
-gophergeist ask "what is the capital of France?" --seance
-```
-
-When the passages in your folder cover less than half the words in a question, the question is sent to two
-open sources that need no account or API key:
-
-- **Veronica-2**, the search engine that still indexes the living Gopherspace, run by Floodgap. So the ghost of
-  the 1992 Veronica literally asks her surviving descendant.
-- **Wikipedia's** public search API.
-
-Your local model still writes the answer, in Veronica's voice, opening with a line about reaching beyond the
-archives and citing what it summoned. Gopher results link to the real gopherholes, and Wikipedia results are
-`h` links.
-
-What leaves your machine is only the question text, and only for questions your files can't answer. Questions your
-files cover never go out, and with the flag off nothing does. If the internet is down, the séance quietly fails
-and she falls back to "the archives are silent."
-
-## Commands
-
-| Command | What it does |
-| --- | --- |
-| `gophergeist serve [FOLDER]` | Serve a folder (default: the bundled demo) as a gopherhole on port 7070. Writes menu blurbs in the background. `--web` adds a browser view on port 8070. `--seance` lets Veronica search online when your files are silent. `--bind 0.0.0.0` shares it on your network; `--port 70` is traditional (needs root). |
-| `gophergeist browse [URL]` | A tiny interactive Gopher client. Works on any gopherhole, not just this one. `--ask "..."` goes straight to Veronica. |
-| `gophergeist ask "question" [FOLDER]` | Ask Veronica from the command line. `--seance` works here too. |
-| `gophergeist index [FOLDER]` | Write all menu blurbs now instead of in the background. |
-| `gophergeist dataset [FOLDER...]` | Write fine-tuning data that teaches a small model to be Veronica (see `finetune/`). |
-| `gophergeist doctor` | Check that the local model is reachable and answers. |
-
-Every model command takes `--backend ollama|openai|none`, `--model` and `--model-host`.
-
-## How the open pieces make it work
+## How I Built It
 
 | Piece | What it does |
 | --- | --- |
-| **Gopher, RFC 1436** (open standard, 1993) | The whole wire protocol fits on a page: one request line in, a menu or a document out. The server is under 200 lines of `asyncio`. |
-| **Ollama** or **llama.cpp / llamafile** (open source) | Runs the model on `localhost`. gophergeist talks to them over HTTP with `urllib`, no SDK. |
-| **Llama 3.2 1B, fine-tuned as Veronica** (open weights, default) | Gives Veronica her voice, and writes the one-line blurb under each menu entry. Fine-tuned on a free Colab GPU (see `finetune/`) and published to the Ollama registry. Swap in `qwen2.5:3b`, `gemma3`, `phi4-mini`, or anything else your machine can run. |
-| **BM25** (plain Python) | Finds the passages first. The model only reads the top few and must cite them as `[1]`, `[2]`, so a small model stays grounded instead of making things up. |
+| **Gopher, RFC 1436** | An open standard from 1993. One request line in, a menu or a document out. |
+| **Ollama** | Runs the model on `localhost`. gophergeist talks to it over plain HTTP, no SDK. llama.cpp, llamafile and LM Studio work too (`--backend openai`). |
+| **Llama 3.2 1B, fine-tuned** | Veronica's voice. Also writes the one-line blurb under each menu entry. |
+| **Qwen 2.5 7B** | The "teacher" that wrote the training data. Only used once, during training. |
+| **Unsloth + Google Colab** | LoRA fine-tuning on a free T4 GPU, exported to a 770 MB GGUF. |
+| **BM25** | Plain-Python keyword search that finds the passages before the model ever sees them. |
 
 ### The index finds, the ghost speaks
 
-Small local models are good at reading a few paragraphs and answering a question about them. They are not good at
-remembering facts about 1990s internet history. So the split is strict:
+Small models are good at reading a few paragraphs and answering from them. They're bad at remembering 1990s
+internet history. So the split is strict: search finds the facts, the model only reads and cites. That's what lets
+a 1B model give grounded answers, and it means editing your files never needs retraining.
 
-- A BM25 index (with a deliberately crude stemmer) picks the four best passages from the hole.
-- Veronica's system prompt tells the model to answer **only** from those numbered sources, cite them, and say "the
-  archives are silent" when they don't cover the question. She gets one ghostly aside, no more.
-- Every answer ends with real Gopher links to the sources, so you can check her.
-- If the model is asleep, slow, or not installed, the index answers on its own. A ghost should never take the
-  server down with it.
+### Fine-tuning Veronica
 
-### It's a real Gopher server
+A stock 1B model sometimes forgets to cite or wanders off the sources. So I taught one to do the job:
 
-- Correct type `0`, `1`, `3`, `7`, `9`, `g` and `I` items, plus the near-universal `i` info lines.
-- Text documents are dot-stuffed and terminated with a lone `.` as RFC 1436 asks.
-- Gopher+ clients that send `\t+` get plain Gopher back.
-- Selectors can't escape the folder: `..`, hidden files and symlinks pointing outside are refused (and tested).
-- The search index rebuilds itself when you add or edit a file. Blurbs are cached by content hash in
-  `.gophergeist/`, which is never served.
+1. `gophergeist dataset` has a bigger teacher model (Qwen 2.5 7B) write practice questions from the gopherhole,
+   then answer them as Veronica: only from the sources, cite everything, keep it short.
+2. Some examples deliberately pair a question with the *wrong* passages, or ask about pizza, so she learns to say
+   "the archives are silent".
+3. Unsloth LoRA-trains Llama 3.2 1B on that in a free Colab notebook, exports a GGUF, and I pushed it to Ollama.
 
-## Why open matters for this
+It learns *how* to answer, not *what* the facts are. The whole pipeline is in
+[`finetune/veronica_colab.ipynb`](finetune/veronica_colab.ipynb).
 
-**Gopher is the cautionary tale.** In 1993 the University of Minnesota announced license fees for some uses of its
-Gopher server. That same spring, on April 30, CERN put the World Wide Web into the public domain. Developers and
-companies picked the one nobody could charge them for, and Gopher withered. The web won because it was open.
+<!-- TODO: stock llama3.2:1b vs fine-tuned, same question: time + did it cite? -->
 
-So it would be a strange tribute to resurrect Gopher on top of an API that someone else can price, change or shut
-down. A revival that depends on a closed service is just a ghost waiting to happen. Here is what the open pieces
-make possible:
+### Making it fast on a normal laptop
 
-- **It runs with the lights (and the internet) off.** The model, the index and the server all live on one laptop.
-  Unplug the router, start `gophergeist serve`, and Veronica still answers. Fitting for a protocol that
-  was built for slow campus networks.
-- **It can't be taken away.** A llamafile is a single executable with the weights inside. Put it on a USB stick
-  next to this repo and the whole thing will still run in 2046, with no account to expire and no endpoint to be
-  deprecated. Preservation is the point of a project like this.
-- **Your folder stays yours.** People will point this at personal things: journals, family stories, notes. None of
-  it is uploaded anywhere to be summarized.
-- **Swap the ghost, change the haunting.** Want a bigger model, a multilingual one for a family archive in Spanish,
-  or a fine-tune that talks like a 1993 sysadmin? Change `--model`. The persona is a plain string in
-  `veronica.py`, so you can rewrite who's haunting the machine.
-- **You can train your own ghost.** With the weights in hand, a free Colab GPU turns a 1B model into a Veronica
-  that knows the job, and you keep the result as a single file. A closed API lets you rent a fine-tune; it doesn't
-  give you the model to keep on a USB stick.
-- **It costs nothing to leave running.** A gopherhole is meant to sit there for years. Per-token pricing and a
-  server that's always on don't mix; a 1B model on hardware you already own does.
+No GPU needed. On a CPU, speed is mostly about how much the model reads and writes, so:
 
-### Where open worked better than closed
+- **Short prompts:** three passages, each trimmed to the ~450 most relevant characters.
+- **Short answers:** about 80 words.
+- **Streaming:** in the browser, words appear as she writes them.
+- **Warm model:** loaded at startup and kept in memory between questions.
+- **Cache:** repeat questions come back instantly.
+- **Visitors first:** background work pauses while someone is asking.
 
-- **A tiny model is enough.** Retrieval does the finding, so the model only has to read four short passages and
-  answer from them, which is well within what a small local model handles. The citations make it easy to see when it
-  strays. A bigger hosted model would mostly be paying for knowledge Veronica is told not to use.
-- **Five runtimes for the price of one.** Because the open ecosystem converged on the same small HTTP APIs, one
-  hundred-line `model.py` supports Ollama, llama.cpp, llamafile, LM Studio and vLLM, with no SDK.
-- **Honest trade-off:** a frontier hosted model writes more polished prose and knows more history. But for a
-  tool whose job is to answer from *your* files, that extra knowledge is a liability, and the price is your data
-  leaving your machine.
+### Séance mode 🔮
 
-## Testing
+By default Veronica only knows your files. With `--seance`, a question your files can't answer gets carried
+"beyond the veil" to **Veronica-2**, the search engine that still indexes the living Gopherspace today, and to
+Wikipedia. So the ghost of the 1992 Veronica asks her surviving descendant. It's off by default, only the
+question text leaves your machine, and offline she just goes back to "the archives are silent".
 
-```bash
-pip install pytest
-python -m pytest -q
-```
+## Why Does Open Innovation Matter?
 
-The 58 tests run fully offline in a few seconds. A fake "spirit" stands in for the model, and a stub HTTP server
-stands in for Ollama and llama.cpp so the real request code is exercised. There's also a real TCP round trip
-through the bundled client, plus path-traversal attempts over Gopher and over the web view.
+**Gopher is literally the cautionary tale.** It didn't lose because it was worse. It lost because someone could
+charge for it, while the web was free to run, change and build on. Resurrecting it on top of a closed API that
+someone else can price, change or shut down would be a pretty weird tribute. That would just be another ghost
+waiting to happen.
 
-**A note on how this was built:** the sandbox I built it in couldn't download model weights (no access to Ollama's
-registry or Hugging Face), so I tested it end to end against a stub Ollama server and in index-only mode, not
-against a real model. Run it with a real model before you trust the answer transcript above. The same goes for
-séance mode: the sandbox couldn't reach Floodgap or Wikipedia, so it's tested against fakes of both. Try a live
-séance before you show it off.
+Here's what going open made possible:
 
-## Limitations
+- **It works with the lights (and the internet) off.** Model, index and server all live on one laptop. Turn off
+  Wi-Fi and Veronica still answers.
+- **I could fine-tune her and keep her.** With open weights I trained my own Veronica on a free GPU, and the result
+  is one 770 MB file I own. A closed API rents you a fine-tune. It doesn't give you the model to put on a USB stick.
+- **Your files stay yours.** People will point this at journals, family stories, notes. None of it is uploaded
+  anywhere.
+- **It can't be taken away.** No account to expire, no endpoint to get deprecated. A gopherhole is meant to sit
+  there for years, and so is this.
+- **It costs nothing to leave running.** Per-token pricing and an always-on server don't mix. A 1B model on
+  hardware you already own does.
+- **Swap the ghost.** Want Gemma, a bigger model, or a ghost in Spanish? Change `--model`.
 
-- Text only for answers. Images and binaries are served, but Veronica can't read them.
-- BM25 matches words, not meaning: "why did Gopher die?" won't match "killed" as well as "license" does. The model
-  smooths this over when it's running.
-- No `gophermap` support yet; menus are generated from the folder layout.
-- No TLS, which is period-accurate but means you shouldn't serve anything private beyond your LAN.
+### Where open beat closed
 
-## History sources
+- **Small and specialised beats big and general here.** A frontier model knows more history, but for a tool that
+  must answer *only* from your files, that extra knowledge is a liability. A 1B model trained for the job is a
+  better fit, and it runs on anything.
+- **One tiny client, many runtimes.** The open ecosystem settled on the same simple HTTP APIs, so one small
+  `model.py` works with Ollama, llama.cpp, llamafile, LM Studio and vLLM.
 
-[RFC 1436](https://www.rfc-editor.org/rfc/rfc1436) (The Internet Gopher Protocol, 1993), and the
-[Floodgap gopher server](gopher://gopher.floodgap.com/), which has kept Gopherspace and Veronica-2 alive for years.
-The demo hole is my own summary; corrections welcome.
+## My Agent Session
 
-## License
+<!-- TODO: link or embed the agent session -->
 
-The code is MIT. Unlike Gopher in 1993, you will never be asked for a license fee.
+I built this together with Claude as a coding agent: picking the idea, writing the server and tests, and debugging
+the fine-tuning notebook on Colab.
+
+## Prize Categories
+
+<!-- TODO: list any that apply, or remove this section -->
+
+---
+
+### Limitations
+
+- Veronica only reads text. Images and binaries are served, but she can't read them.
+- Keyword search matches words, not meaning, so "why did Gopher die?" matches "license" better than "killed".
+- No `gophermap` support yet. Menus come from the folder layout.
+- No TLS (very period-accurate), so don't serve anything private beyond your own network.
+
+### Sources
+
+[RFC 1436](https://www.rfc-editor.org/rfc/rfc1436) and the [Floodgap gopher server](gopher://gopher.floodgap.com/),
+which has kept Gopherspace and Veronica-2 alive for years. The demo hole is my own summary; corrections welcome.
+
+### License
+
+The code is MIT. Unlike Gopher in 1993, you'll never be asked for a license fee.
 
 The fine-tuned Veronica model is derived from Llama 3.2 1B and is covered by the
 [Llama 3.2 Community License](https://www.llama.com/llama3_2/license/). **Built with Llama.**

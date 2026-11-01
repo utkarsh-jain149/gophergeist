@@ -15,7 +15,7 @@ import urllib.request
 DEFAULT_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 DEFAULT_OPENAI_URL = "http://localhost:8080/v1"
 # The fine-tuned Veronica published to the Ollama registry, then a stock model if she can't be pulled.
-VERONICA_MODEL = "YOUR_OLLAMA_USER/llama3.2-veronica:1b"
+VERONICA_MODEL = "utkarsh2023/llama3.2-veronica:1b"
 FALLBACK_MODEL = "llama3.2:1b"
 DEFAULT_MODEL = os.environ.get("GOPHERGEIST_MODEL", VERONICA_MODEL)
 
